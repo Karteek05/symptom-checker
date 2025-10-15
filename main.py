@@ -2,59 +2,73 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
-
-try:
-    from openai import OpenAI
-    USE_LLM = True
-except ImportError:
-    USE_LLM = False
+import requests
 
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="Healthcare Symptom Checker")
+OPENROUTER_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Initialize OpenAI client (if available)
-if USE_LLM and os.getenv("OPENAI_API_KEY"):
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-else:
-    client = None
+app = FastAPI(
+    title="Healthcare Symptom Checker",
+    description="Educational symptom checker using OpenRouter (free GPT-OSS-20B model).",
+    version="1.0.0",
+)
 
-# Input model
 class SymptomInput(BaseModel):
     symptoms: str
 
+
 @app.post("/check-symptoms")
 async def check_symptoms(input: SymptomInput):
-    """Takes symptom text and returns possible conditions + recommendations"""
+    """Analyze symptoms and return possible conditions + next steps."""
     if not input.symptoms.strip():
         raise HTTPException(status_code=400, detail="Symptoms cannot be empty")
 
-    # Create LLM prompt
     prompt = f"""
-    You are a helpful medical assistant (for educational purposes only).
+    You are a responsible medical information assistant.
     Based on these symptoms: "{input.symptoms}",
-    list 3–5 possible conditions and practical next steps.
-    Always end with this disclaimer:
+    list 3–5 possible conditions (educational purposes only),
+    provide practical next steps,
+    and include this disclaimer:
     ⚠️ This is for educational purposes only and not a substitute for medical advice.
     """
 
-    if client:
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.5,
-            )
-            result = response.choices[0].message.content
-        except Exception as e:
-            result = f"Error generating response: {e}"
-    else:
-        # Offline fallback
+    try:
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "HTTP-Referer": "https://github.com/Karteek05/symptom-checker",  # required by OpenRouter
+            "X-Title": "Healthcare Symptom Checker",
+            "Content-Type": "application/json",
+        }
+
+        data = {
+    "model": "openai/gpt-oss-20b:free",  # 👈 ensures it uses the free route
+    "messages": [{"role": "user", "content": prompt}],
+    }
+
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=data,
+        )
+        response.raise_for_status()
+        result = response.json()["choices"][0]["message"]["content"]
+
+    except Exception as e:
         result = (
-            "Possible conditions: Common Cold, Influenza, or Viral Infection.\n"
-            "Next steps: Rest, stay hydrated, and consult a doctor if fever persists.\n"
-            "⚠️ This is for educational purposes only and not a substitute for medical advice."
+            f"⚠️ Could not connect to OpenRouter: {e}\n\n"
+            "Possible conditions: Common cold, Flu, or Viral infection.\n"
+            "Next steps: Rest, hydrate, and consult a doctor if fever persists.\n"
+            "⚠️ Educational use only."
         )
 
     return {"input": input.symptoms, "analysis": result}
+
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to the Healthcare Symptom Checker API (OpenRouter-powered)",
+        "usage": "POST /check-symptoms with {'symptoms': 'your symptoms here'}",
+    }
