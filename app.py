@@ -9,8 +9,25 @@ OPENROUTER_API_KEY = os.getenv("OPENAI_API_KEY")
 
 st.set_page_config(page_title="Healthcare Symptom Checker", page_icon="🩺", layout="centered")
 
-st.title("🩺 Healthcare Symptom Checker")
-st.markdown("Enter your symptoms below to get possible conditions and next steps (for educational use only).")
+st.markdown("""
+    <style>
+        .main-title {
+            text-align: center;
+            color: #2B6CB0;
+            font-size: 2.2em;
+            font-weight: bold;
+        }
+        .sub-title {
+            text-align: center;
+            color: #4A5568;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+    </style>
+    <h1 class='main-title'>🩺 Healthcare Symptom Checker</h1>
+    <p class='sub-title'>AI-powered educational assistant that helps you understand your symptoms safely.</p>
+""", unsafe_allow_html=True)
+st.info("💡 This tool provides educational information only and should not replace a doctor’s consultation.")
 
 # User input
 symptoms = st.text_area("Describe your symptoms:", placeholder="e.g., fever, sore throat, headache")
@@ -63,4 +80,10 @@ if st.button("Analyze Symptoms"):
                 """)
 
 st.markdown("---")
-st.caption("Developed by Karteek Cherukupalli (22BCE7767) | VIT-AP | Unthinkable 2026 Project")
+st.markdown("""
+    <div style='text-align: center; font-size: 0.9em; color: grey;'>
+        Developed by <b>Karteek Cherukupalli (22BCE7767)</b> <br>
+        Vellore Institute of Technology | Unthinkable 2026 Project <br>
+        <i>Powered by OpenRouter | Built with FastAPI + Streamlit</i>
+    </div>
+""", unsafe_allow_html=True)
