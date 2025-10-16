@@ -3,12 +3,14 @@ import requests
 import os
 from dotenv import load_dotenv
 
-# Load your OpenRouter API key from environment variables or Streamlit secrets
+# Load API key
 load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# Page setup
 st.set_page_config(page_title="Healthcare Symptom Checker", page_icon="🩺", layout="centered")
 
+# Custom CSS
 st.markdown("""
     <style>
         .main-title {
@@ -21,24 +23,47 @@ st.markdown("""
             text-align: center;
             color: #4A5568;
             font-size: 1.1em;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: grey;
+            margin-top: 50px;
+        }
+        .disclaimer {
+            background-color: #EBF8FF;
+            border-left: 5px solid #2B6CB0;
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
         }
     </style>
-    <h1 class='main-title'>🩺 Healthcare Symptom Checker</h1>
-    <p class='sub-title'>AI-powered educational assistant that helps you understand your symptoms safely.</p>
 """, unsafe_allow_html=True)
+
+# Header
+st.markdown("<h1 class='main-title'>🩺 Healthcare Symptom Checker</h1>", unsafe_allow_html=True)
+st.markdown("<p class='sub-title'>AI-powered educational assistant to help you understand your symptoms responsibly.</p>", unsafe_allow_html=True)
+
+st.image("https://cdn-icons-png.flaticon.com/512/2966/2966327.png", width=100)
+
+# Symptom input
+st.markdown("### Describe your symptoms below:")
+symptoms = st.text_area(" ", placeholder="e.g., fever, sore throat, headache")
+
 st.info("💡 This tool provides educational information only and should not replace a doctor’s consultation.")
 
-# User input
-symptoms = st.text_area("Describe your symptoms:", placeholder="e.g., fever, sore throat, headache")
+# Initialize history in session state
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-if st.button("Analyze Symptoms"):
+# Analyze button
+if st.button("🔍 Analyze Symptoms"):
     if not symptoms.strip():
         st.warning("⚠️ Please enter your symptoms before submitting.")
     else:
-        with st.spinner("Analyzing with AI..."):
+        with st.spinner("Analyzing your symptoms using AI..."):
             try:
-                # --- Prepare OpenRouter API Request ---
                 headers = {
                     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                     "HTTP-Referer": "https://github.com/Karteek05/symptom-checker",
@@ -61,28 +86,54 @@ if st.button("Analyze Symptoms"):
                     }],
                 }
 
-                # --- API Request to OpenRouter ---
-                response = requests.post("https://openrouter.ai/api/v1/chat/completions",
-                                         headers=headers, json=data)
+                response = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers, json=data
+                )
                 response.raise_for_status()
                 result = response.json()["choices"][0]["message"]["content"]
 
                 st.success("✅ Analysis Complete!")
                 st.markdown(result)
 
+                # Save to history
+                st.session_state.history.append({
+                    "symptoms": symptoms,
+                    "result": result
+                })
+
             except Exception as e:
                 st.error(f"⚠️ Could not reach OpenRouter API: {e}")
                 st.info("Showing offline example response instead.")
-                st.markdown("""
+                example_response = """
                 **Possible conditions:** Common cold, Flu, or Viral infection  
                 **Next steps:** Rest, hydrate, and consult a doctor if symptoms persist.  
                 ⚠️ Educational purposes only — not medical advice.
-                """)
+                """
+                st.markdown(example_response)
+                st.session_state.history.append({
+                    "symptoms": symptoms,
+                    "result": example_response
+                })
 
+# Divider
 st.markdown("---")
+
+# History section
+if st.session_state.history:
+    st.markdown("### 🕒 Previous Queries")
+    for entry in reversed(st.session_state.history[-5:]):
+        st.markdown(f"**🩹 Symptoms:** {entry['symptoms']}")
+        st.markdown(f"{entry['result']}")
+        st.markdown("---")
+
+# Disclaimer
+st.markdown("<div class='disclaimer'>⚠️ This tool is for educational purposes only. Always consult a qualified healthcare professional for personalized medical advice.</div>", unsafe_allow_html=True)
+
+# Footer
 st.markdown("""
-    <div style='text-align: center; font-size: 0.9em; color: grey;'>
-        Developed by <b>Karteek Cherukupalli (22BCE7767)</b> <br>
+    <div class='footer'>
+        Developed by <b>Karteek C (22BCE7767)</b> <br>
         Vellore Institute of Technology | Unthinkable 2026 Project <br>
         <i>Powered by OpenRouter | Built with FastAPI + Streamlit</i>
     </div>
