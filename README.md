@@ -1,4 +1,11 @@
-🩺 Healthcare Symptom Checker
+# 🩺 Healthcare Symptom Checker
+
+**🎯 Live Demo:** [https://karteek05-symptom-checker.streamlit.app](https://karteek05-symptom-checker.streamlit.app)
+
+An AI-powered educational tool that analyzes symptoms and suggests possible conditions using LLMs.
+Built with FastAPI, Streamlit, and OpenRouter.
+
+> ⚠️ For educational purposes only — not a diagnostic tool.
 
 An AI-powered educational symptom analysis tool that helps users understand possible medical conditions and safe next steps based on their entered symptoms.
 Built using FastAPI, Streamlit, and OpenRouter (GPT-OSS-20B) — this project demonstrates how large language models can assist in health awareness and decision support while maintaining strict safety and ethical disclaimers.
@@ -98,3 +105,4 @@ symptom-checker/
 Cherukupalli Sai Sriram Karteek (22BCE7767)
 Vellore Institute of Technology — Unthinkable 2026 Project
 📅 October 2025
+
